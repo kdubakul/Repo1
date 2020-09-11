@@ -11,6 +11,14 @@ public class EmailMessage {
     private static Map<Id,String> accRoles = new Map<Id,String>();
     private static Map<List<String>,List<String>> reviewerMap = new Map<List<String>,List<String>>();
     private static List<String> roles;
+    private static List<String> acceptedTeamRoles = getAcceptedTeamRoles();
+
+    private static List<String> getAcceptedTeamRoles(){
+        String roleNames = ContactReviewer__c.getInstance('Accepted Roles').config_value__c;
+        List<String> acceptedRoles = roleNames.split(',');
+        System.debug(acceptedRoles);
+        return acceptedRoles;
+    }
     
     public static void sendEmail(List<Contact> conList){
         
@@ -58,14 +66,14 @@ public class EmailMessage {
         System.debug('accOptyConMap.values() --> '+accOptyConMap.values());
         
         //teamRoleMap with account / opportunity id as key and employee's email as value
-        for(Account_Team_Role__c  accTeamRole: [SELECT Id, Account_Name__c, Account_Role__c,Reviewer_Name__c, Employee__c,Employee__r.email__c FROM Account_Team_Role__c WHERE Account_Name__c IN :accOptyConMap.values()]){
+        for(Account_Team_Role__c  accTeamRole: [SELECT Id, Account_Name__c, Account_Role__c,Reviewer_Name__c, Employee__c,Employee__r.email__c FROM Account_Team_Role__c WHERE Account_Name__c IN :accOptyConMap.values() and Account_Role__c in :acceptedTeamRoles]){
             if(!teamRoleMap.containsKey(accTeamRole.Account_Name__c)){
                 teamRoleMap.put(accTeamRole.Account_Name__c,new Map<String,String>());
             }
             teamRoleMap.get(accTeamRole.Account_Name__c).put(accTeamRole.Account_Role__c, accTeamRole.Employee__r.email__c);
         }
         //teamRoleMap with account / opportunity id as key and employee's email as value
-        for(Opportunity_Team_Role__c  oppTeamRole: [SELECT Id, Opportunity_Role__c, Reviewer__c, Opportunity_Name__c, Employee__c,Employee__r.email__c FROM Opportunity_Team_Role__c WHERE Opportunity_Name__c IN :accOptyConMap.values()]){
+        for(Opportunity_Team_Role__c  oppTeamRole: [SELECT Id, Opportunity_Role__c, Reviewer__c, Opportunity_Name__c, Employee__c,Employee__r.email__c FROM Opportunity_Team_Role__c WHERE Opportunity_Name__c IN :accOptyConMap.values() and Opportunity_Role__c in :acceptedTeamRoles]){
             if(!teamRoleMap.containsKey(oppTeamRole.Opportunity_Name__c)){
                 teamRoleMap.put(oppTeamRole.Opportunity_Name__c,new Map<String,String>());
             }
@@ -82,6 +90,7 @@ public class EmailMessage {
         //emailsToSend map with contactid as key and employee's email as as values from team roles.
         for(Id key : accOptyConMap.keySet() ){
             roles = new List<String>(teamRoleMap.get(accOptyConMap.get(key)).keySet());
+            roles.sort();
             System.debug(roles + ' --- ' +reviewerMap.get(roles));
             for(String str : reviewerMap.get(roles)){
                 System.debug('str--> '+str+ ' teamRoleMap.get(accOptyConMap.get(key)).get(str)-->'+teamRoleMap.get(accOptyConMap.get(key)).get(str));
@@ -122,7 +131,7 @@ public class EmailMessage {
         }
         System.debug('masterListMails--> '+masterListMails);
         
-        /*if(masterListMails.size() > 0){
+        if(masterListMails.size() > 0){
             Messaging.SendEmailResult[] results = Messaging.sendEmail(masterListMails);
             
             for(Messaging.SendEmailResult result : results){
@@ -133,6 +142,6 @@ public class EmailMessage {
                 }
             }
             
-        }*/
+        }
     }
 }
