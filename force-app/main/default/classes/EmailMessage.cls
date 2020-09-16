@@ -15,7 +15,10 @@ public class EmailMessage {
 
     private static List<String> getAcceptedTeamRoles(){
         String roleNames = ContactReviewer__c.getInstance('Accepted Roles').config_value__c;
-        List<String> acceptedRoles = roleNames.split(',');
+        List<String> acceptedRoles = new List<String>();
+        if(String.isNotEmpty(roleNames)){
+	        acceptedRoles = roleNames.split(',');
+        }
         System.debug(acceptedRoles);
         return acceptedRoles;
     }
@@ -108,7 +111,7 @@ public class EmailMessage {
         
         List<Messaging.SingleEmailMessage> masterListMails = new List<Messaging.SingleEmailMessage>();
         
-        for(Contact con : [Select id, name, email, Reviewer__c, Reviewer__r.Name, Status__c,createdby.email from Contact where id in: emailsToSend.keySet()]){
+        for(Contact con : [Select id, name, email, Reviewer__c, Reviewer__r.Name, Status__c,createdby.email from Contact where id in: conList]){
             Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage(); 
             String subject = 'Contact '+con.Name+ ' Rejected';
             email.setSubject(subject);
@@ -119,14 +122,15 @@ public class EmailMessage {
             System.debug('body --> '+body);
             email.setHtmlBody(body);
             email.setSenderDisplayName('No Reply');
-            List<String> toAddresses = new List<String>();
+            Set<String> toAddresses = new Set<String>();
             if(emailsToSend.get(con.Id) != null){
                 toAddresses.addAll(emailsToSend.get(con.Id));
+                toAddresses.add(con.createdBy.email);
             }else{
                 toAddresses.add(con.createdBy.email);
             }
             System.debug('toAddresses ---> '+toAddresses);
-            email.setToAddresses(toAddresses);
+            email.setToAddresses(new List<String>(toAddresses));
             masterListMails.add(email);
         }
         System.debug('masterListMails--> '+masterListMails);

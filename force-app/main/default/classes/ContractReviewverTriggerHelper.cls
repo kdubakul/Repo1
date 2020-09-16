@@ -15,8 +15,6 @@ public class ContractReviewverTriggerHelper {
     Public static void beforeInsert(List<Contact> conList)
     {
         updateContactReviewer(conList);
-        
-        
     }
     
     Public static void beforeUpdate(List<Contact> conList,Map<Id,contact> oldconMap)
@@ -45,6 +43,7 @@ public class ContractReviewverTriggerHelper {
             }
         }
         if(sendEmailConList.size() > 0){
+            System.debug('sendEmailConList--> '+sendEmailConList);
 	        EmailMessage.sendEmail(sendEmailConList);
         }
     }
@@ -105,7 +104,7 @@ public class ContractReviewverTriggerHelper {
                 if(oppTeamRole.Opportunity_Role__c == 'Team Lead')
                 {
                     OppIdVsUserIdLeadrMap.put(oppTeamRole.Opportunity_Name__c,oppTeamRole);
-                }
+                }                
             }
         }
         
@@ -121,7 +120,7 @@ public class ContractReviewverTriggerHelper {
                     if(!accIdVsUserIdLeadrMap.isEmpty() && accIdVsUserIdLeadrMap.containsKey(con.accountId))
                 {
                     con.Reviewer__c = accIdVsUserIdLeadrMap.get(con.accountId).Reviewer_Name__c;
-                }
+                }                
             }
             else if(con.Opportunity__c != null)
             {
